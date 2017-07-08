@@ -1,6 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
+const boardSize = 3;
+
 
 function Square(props) {
   return (
@@ -20,24 +22,29 @@ class Board extends React.Component {
     );
   }
 
+  renderSingleRow(i) {
+  	var cells = []; 
+  	for (let j=0; j<boardSize; j++) {
+  		cells.push(this.renderSquare(i,j));
+  	}
+  	return cells;
+  }
+
+  renderAllRows() {
+  	var rows = []; 
+  	for (let j=0; j<boardSize; j++) {
+  		rows.push(<div className="board-row">
+          			{this.renderSingleRow(j)}
+        		</div>
+        		);
+  	}
+  	return rows;
+  }
+
   render() {
     return (
       <div>
-        <div className="board-row">
-          {this.renderSquare(0,0)}
-          {this.renderSquare(0,1)}
-          {this.renderSquare(0,2)}
-        </div>
-        <div className="board-row">
-          {this.renderSquare(1,0)}
-          {this.renderSquare(1,1)}
-          {this.renderSquare(1,2)}
-        </div>
-        <div className="board-row">
-          {this.renderSquare(2,0)}
-          {this.renderSquare(2,1)}
-          {this.renderSquare(2,2)}
-        </div>
+        {this.renderAllRows()}
       </div>
     );
   }
@@ -46,14 +53,17 @@ class Board extends React.Component {
 class Game extends React.Component {
   constructor() {
     super();
+    var emptyBoard  = [];
+    for(let i = 0; i < boardSize; i++) {
+        emptyBoard[i] = [];
+        for(let j = 0; j < boardSize; j++) {
+            emptyBoard[i][j] = null;
+        }
+    }
     this.state = {
       history: [
         {
-          squares: [ 
-					  [null,null,null],
-					  [null,null,null],
-					  [null,null,null]
-					],
+          squares: emptyBoard,
 		  newMove: [null, null]
         }
       ],
@@ -67,9 +77,9 @@ class Game extends React.Component {
     const current = history[history.length - 1];
     const squares = current.squares.slice();
     var currentSquares  = [];
-    for(let i = 0; i < 3; i++) {
+    for(let i = 0; i < boardSize; i++) {
         currentSquares[i] = [];
-        for(let j = 0; j < 3; j++) {
+        for(let j = 0; j < boardSize; j++) {
             currentSquares[i][j] = squares[i][j];
         }
     }
@@ -104,11 +114,20 @@ class Game extends React.Component {
 
     const moves = history.map((currentVal, moveNo) => {
       const desc = moveNo ? "Move #"+moveNo+ " "+ currentVal.newMove : "Game start";
-      return (
-        <li key={moveNo}>
-          <a href="#" onClick={() => this.jumpTo(moveNo)}>{desc}</a>
-        </li>
+      if (moveNo === this.state.stepNumber) {
+	      return (
+	        <li key={moveNo}>
+	          <a href="#" onClick={() => this.jumpTo(moveNo)}><b>{desc}</b></a>
+	        </li>
+	        );
+      }
+      else {
+	      return (
+	        <li key={moveNo}>
+	          <a href="#" onClick={() => this.jumpTo(moveNo)}>{desc}</a>
+	        </li>
       );
+     }
     });
 
     let status;
@@ -140,10 +159,10 @@ class Game extends React.Component {
 ReactDOM.render(<Game />, document.getElementById("root"));
 
 function calculateWinner(squares) {
-  for (let i = 0; i < squares[0].length; i++) {
+  for (let i = 0; i < boardSize; i++) {
   	let firstInRow = squares[i][0];
   	let winningRow = true;
-  	for (let j=1; j < squares[0].length; j++) {
+  	for (let j=1; j < boardSize; j++) {
   		if (squares[i][j] !== firstInRow) {
   			winningRow = false;
   			break;
@@ -153,10 +172,10 @@ function calculateWinner(squares) {
   		return firstInRow;
   	}
    }
-  for (let j = 0; j < squares[0].length; j++) {
+  for (let j = 0; j < boardSize; j++) {
   	let firstInCol = squares[0][j];
   	let winningCol = true;
-  	for (let i=1; i < squares[0].length; i++) {
+  	for (let i=1; i < boardSize; i++) {
   		if (squares[i][j] !== firstInCol) {
   			winningCol = false;
   			break;
@@ -169,7 +188,7 @@ function calculateWinner(squares) {
 
 	let firstInDiag = squares[0][0];
 	let winningDiag = true;
-	for (let i=1; i < squares[0].length; i++) {
+	for (let i=1; i < boardSize; i++) {
 		if (squares[i][i] !== firstInDiag) {
 			winningDiag = false;
 			break;
