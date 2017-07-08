@@ -11,11 +11,11 @@ function Square(props) {
 }
 
 class Board extends React.Component {
-  renderSquare(i) {
+  renderSquare(i,j) {
     return (
       <Square
-        value={this.props.squares[i]}
-        onClick={() => this.props.onClick(i)}
+        value={this.props.squares[i][j]}
+        onClick={() => this.props.onClick(i,j)}
       />
     );
   }
@@ -24,19 +24,19 @@ class Board extends React.Component {
     return (
       <div>
         <div className="board-row">
-          {this.renderSquare(0)}
-          {this.renderSquare(1)}
-          {this.renderSquare(2)}
+          {this.renderSquare(0,0)}
+          {this.renderSquare(0,1)}
+          {this.renderSquare(0,2)}
         </div>
         <div className="board-row">
-          {this.renderSquare(3)}
-          {this.renderSquare(4)}
-          {this.renderSquare(5)}
+          {this.renderSquare(1,0)}
+          {this.renderSquare(1,1)}
+          {this.renderSquare(1,2)}
         </div>
         <div className="board-row">
-          {this.renderSquare(6)}
-          {this.renderSquare(7)}
-          {this.renderSquare(8)}
+          {this.renderSquare(2,0)}
+          {this.renderSquare(2,1)}
+          {this.renderSquare(2,2)}
         </div>
       </div>
     );
@@ -49,7 +49,12 @@ class Game extends React.Component {
     this.state = {
       history: [
         {
-          squares: Array(9).fill(null)
+          squares: [ 
+					  [null,null,null],
+					  [null,null,null],
+					  [null,null,null]
+					],
+		  newMove: [null, null]
         }
       ],
       stepNumber: 0,
@@ -57,18 +62,27 @@ class Game extends React.Component {
     };
   }
 
-  handleClick(i) {
+  handleClick(i,j) {
     const history = this.state.history.slice(0, this.state.stepNumber + 1);
     const current = history[history.length - 1];
     const squares = current.squares.slice();
-    if (calculateWinner(squares) || squares[i]) {
+    var currentSquares  = [];
+    for(let i = 0; i < 3; i++) {
+        currentSquares[i] = [];
+        for(let j = 0; j < 3; j++) {
+            currentSquares[i][j] = squares[i][j];
+        }
+    }
+    
+    if (calculateWinner(currentSquares) || currentSquares[i][j]) {
       return;
     }
-    squares[i] = this.state.xIsNext ? "X" : "O";
+    currentSquares[i][j] = this.state.xIsNext ? "X" : "O";
     this.setState({
       history: history.concat([
         {
-          squares: squares
+          squares: currentSquares,
+          newMove: [i, j]
         }
       ]),
       stepNumber: history.length,
@@ -84,15 +98,15 @@ class Game extends React.Component {
   }
 
   render() {
-    const history = this.state.history;
-    const current = history[this.state.stepNumber];
-    const winner = calculateWinner(current.squares);
+    const history = this.state.history.slice();
+    const currentSquares = history[this.state.stepNumber].squares.slice();
+    const winner = calculateWinner(currentSquares);
 
-    const moves = history.map((step, move) => {
-      const desc = move ? "Move #" + move : "Game start";
+    const moves = history.map((currentVal, moveNo) => {
+      const desc = moveNo ? "Move #"+moveNo+ " "+ currentVal.newMove : "Game start";
       return (
-        <li key={move}>
-          <a href="#" onClick={() => this.jumpTo(move)}>{desc}</a>
+        <li key={moveNo}>
+          <a href="#" onClick={() => this.jumpTo(moveNo)}>{desc}</a>
         </li>
       );
     });
@@ -108,8 +122,8 @@ class Game extends React.Component {
       <div className="game">
         <div className="game-board">
           <Board
-            squares={current.squares}
-            onClick={i => this.handleClick(i)}
+            squares={currentSquares}
+            onClick={(i,j) => this.handleClick(i,j)}
           />
         </div>
         <div className="game-info">
@@ -126,21 +140,44 @@ class Game extends React.Component {
 ReactDOM.render(<Game />, document.getElementById("root"));
 
 function calculateWinner(squares) {
-  const lines = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6]
-  ];
-  for (let i = 0; i < lines.length; i++) {
-    const [a, b, c] = lines[i];
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
-    }
-  }
-  return null;
+  for (let i = 0; i < squares[0].length; i++) {
+  	let firstInRow = squares[i][0];
+  	let winningRow = true;
+  	for (let j=1; j < squares[0].length; j++) {
+  		if (squares[i][j] !== firstInRow) {
+  			winningRow = false;
+  			break;
+  		}
+  	}
+  	if (winningRow && firstInRow){
+  		return firstInRow;
+  	}
+   }
+  for (let j = 0; j < squares[0].length; j++) {
+  	let firstInCol = squares[0][j];
+  	let winningCol = true;
+  	for (let i=1; i < squares[0].length; i++) {
+  		if (squares[i][j] !== firstInCol) {
+  			winningCol = false;
+  			break;
+  		}
+  	}
+  	if (winningCol && firstInCol){
+  		return firstInCol;
+  	}
+   }
+
+	let firstInDiag = squares[0][0];
+	let winningDiag = true;
+	for (let i=1; i < squares[0].length; i++) {
+		if (squares[i][i] !== firstInDiag) {
+			winningDiag = false;
+			break;
+		}
+	}
+	if (winningDiag && firstInDiag){
+		return firstInDiag;
+	}
+
+ return null;
 }
