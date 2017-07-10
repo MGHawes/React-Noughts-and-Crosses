@@ -6,7 +6,7 @@ const boardSize = 3;
 
 function Square(props) {
   return (
-    <button className="square" onClick={props.onClick}>
+    <button className={props.style} onClick={props.onClick}>
       {props.value}
     </button>
   );
@@ -16,7 +16,9 @@ class Board extends React.Component {
   renderSquare(i,j) {
     return (
       <Square
+        key={j}
         value={this.props.squares[i][j]}
+        style={this.styling(i,j)}
         onClick={() => this.props.onClick(i,j)}
       />
     );
@@ -33,12 +35,22 @@ class Board extends React.Component {
   renderAllRows() {
   	var rows = []; 
   	for (let j=0; j<boardSize; j++) {
-  		rows.push(<div className="board-row">
+  		rows.push(<div key={j} className="board-row">
           			{this.renderSingleRow(j)}
         		</div>
         		);
   	}
   	return rows;
+  }
+  styling(i,j) {
+  	if (this.props.winningSquares) {
+	  	for (let i=0;i<boardSize;i++){
+	  		if ([i,j] === this.props.winningSquares) {
+	  			return "brightsquare";
+	  		}
+	  	}
+  	}
+  return "square"
   }
 
   render() {
@@ -84,7 +96,7 @@ class Game extends React.Component {
         }
     }
     
-    if (calculateWinner(currentSquares) || currentSquares[i][j]) {
+    if (calculateWinner(currentSquares).winner || currentSquares[i][j]) {
       return;
     }
     currentSquares[i][j] = this.state.xIsNext ? "X" : "O";
@@ -110,7 +122,7 @@ class Game extends React.Component {
   render() {
     const history = this.state.history.slice();
     const currentSquares = history[this.state.stepNumber].squares.slice();
-    const winner = calculateWinner(currentSquares);
+    const result = calculateWinner(currentSquares);
 
     const moves = history.map((currentVal, moveNo) => {
       const desc = moveNo ? "Move #"+moveNo+ " "+ currentVal.newMove : "Game start";
@@ -131,8 +143,8 @@ class Game extends React.Component {
     });
 
     let status;
-    if (winner) {
-      status = "Winner: " + winner;
+    if (result.winner) {
+      status = "Winner: " + result.winner + result.winningSquares;
     } else {
       status = "Next player: " + (this.state.xIsNext ? "X" : "O");
     }
@@ -141,7 +153,8 @@ class Game extends React.Component {
       <div className="game">
         <div className="game-board">
           <Board
-            squares={currentSquares}
+            squares={currentSquares} 
+            winningSquares={result.winningSquares}
             onClick={(i,j) => this.handleClick(i,j)}
           />
         </div>
@@ -167,11 +180,16 @@ function calculateWinner(squares) {
   			winningRow = false;
   			break;
   		}
+  		var winningSquares = [];
+  		for (let k=0,k<boardSize;k++){
+  			winningSquares.push([i,k]);
   	}
   	if (winningRow && firstInRow){
-  		return firstInRow;
-  	}
+  		return {winner:firstInRow,
+  				winningSquares:winningSquares
+  				};
    }
+ }
   for (let j = 0; j < boardSize; j++) {
   	let firstInCol = squares[0][j];
   	let winningCol = true;
@@ -180,11 +198,16 @@ function calculateWinner(squares) {
   			winningCol = false;
   			break;
   		}
+  		var winningSquares = [];
+  		for (let k=0,k<boardSize;k++){
+  			winningSquares.push([k,j]);
   	}
   	if (winningCol && firstInCol){
-  		return firstInCol;
+  		return {winner:firstInCol,
+  				winningSquares:winningSquares
+  				};
   	}
-   }
+ }
 
 	let firstInDiag = squares[0][0];
 	let winningDiag = true;
@@ -195,8 +218,32 @@ function calculateWinner(squares) {
 		}
 	}
 	if (winningDiag && firstInDiag){
-		return firstInDiag;
+		var winningSquares = [];
+  		for (let k=0,k<boardSize;k++){
+  			winningSquares.push([k,j]);
+  		}
+
+		return {winner:firstInDiag,
+  		winningSquares:winningSquares
+  		};
 	}
 
- return null;
+	let firstInRevDiag = squares[boardSize-1][0];
+	let winningRevDiag = true;
+	for (let i=1; i < boardSize; i++) {
+		if (squares[boardSize-i-1][i] !== firstInRevDiag) {
+			winningRevDiag = false;
+			break;
+		}
+	}
+	if (winningRevDiag && firstInRevDiag){
+		winningSquares = Array(boardSize).map((_, idx) => [idx,idx]);
+		return {winner:firstInRevDiag,
+  		winningSquares:winningSquares
+  		};
+	}
+
+ return {winner:null,
+  		winningSquares:null
+  		};
 }
